@@ -20,7 +20,7 @@ en5estoy/
 ## Requisitos
 
 - Node.js >= 20
-- MySQL 8
+- MySQL 5.7+ u 8 (probado con MySQL 5.7 de Laragon)
 
 ## Puesta en marcha
 

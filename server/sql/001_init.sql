@@ -50,10 +50,13 @@ CREATE TABLE IF NOT EXISTS user_skills (
 
 -- Ubicacion privada (precision real) y ubicacion publica (aproximada/desplazada).
 -- El backend nunca debe exponer private_location a otros usuarios.
+-- Nota: se usa POINT sin atributo SRID para mantener compatibilidad con MySQL 5.7
+-- (Laragon). Las coordenadas se guardan como (longitud, latitud) en SRID 0 y la
+-- proximidad se calcula con ST_Distance_Sphere (disponible desde MySQL 5.7.6).
 CREATE TABLE IF NOT EXISTS user_locations (
   user_id BIGINT UNSIGNED NOT NULL,
-  private_location POINT NOT NULL SRID 4326,
-  public_location POINT NOT NULL SRID 4326,
+  private_location POINT NOT NULL,
+  public_location POINT NOT NULL,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (user_id),
   SPATIAL INDEX idx_user_locations_public (public_location),
