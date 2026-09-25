@@ -15,6 +15,24 @@ const envSchema = z.object({
   JWT_EXPIRES_IN: z.string().default('7d'),
 
   CORS_ORIGIN: z.string().default('http://localhost:5173'),
+
+  // Secreto para desplazar (ofuscar) la ubicacion publica. Si no se define, usa JWT_SECRET.
+  LOCATION_SECRET: z.string().optional(),
+
+  // Radio de descubrimiento (en metros). Configurable, no hardcodeado.
+  NEARBY_RADIUS_FREE_METERS: z.coerce.number().int().positive().default(1500),
+  NEARBY_RADIUS_MEMBER_METERS: z.coerce.number().int().positive().default(8000),
+  NEARBY_MAX_RADIUS_METERS: z.coerce.number().int().positive().default(5000),
+  // Si hay pocos perfiles cerca, se amplia el radio para no dejar la zona inutilizable.
+  NEARBY_MIN_RESULTS: z.coerce.number().int().nonnegative().default(3),
+  NEARBY_PAGE_SIZE: z.coerce.number().int().positive().max(100).default(30),
+
+  // Desplazamiento de la ubicacion publica respecto de la privada (privacidad).
+  PUBLIC_LOCATION_MIN_OFFSET_METERS: z.coerce.number().int().nonnegative().default(150),
+  PUBLIC_LOCATION_MAX_OFFSET_METERS: z.coerce.number().int().positive().default(350),
+
+  // Velocidad usada para traducir metros a minutos de forma humana.
+  WALK_METERS_PER_MINUTE: z.coerce.number().positive().default(80),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -25,4 +43,7 @@ if (!parsed.success) {
   process.exit(1);
 }
 
-export const env = parsed.data;
+export const env = {
+  ...parsed.data,
+  LOCATION_SECRET: parsed.data.LOCATION_SECRET?.trim() || parsed.data.JWT_SECRET,
+};

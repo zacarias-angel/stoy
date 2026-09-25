@@ -9,8 +9,8 @@ const navItems = [
 
 export function AppShell() {
   return (
-    <div className="flex min-h-full flex-col bg-stone-50">
-      <header className="sticky top-0 z-10 border-b border-stone-200 bg-stone-50/90 px-4 py-3 backdrop-blur">
+    <div className="flex h-[100dvh] flex-col overflow-hidden bg-stone-50">
+      <header className="z-20 shrink-0 border-b border-stone-200 bg-stone-50/90 px-4 py-3 backdrop-blur">
         <div className="mx-auto flex max-w-md items-center justify-between">
           <span className="text-base font-bold tracking-tight text-brand-800">En 5 Estoy</span>
           <span className="hidden text-xs text-stone-500 sm:block">
@@ -19,13 +19,13 @@ export function AppShell() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-md flex-1 pb-24">
+      <main className="relative flex-1 overflow-y-auto">
         <Outlet />
       </main>
 
       <nav
         aria-label="Navegacion principal"
-        className="fixed inset-x-0 bottom-0 border-t border-stone-200 bg-white/95 backdrop-blur"
+        className="z-20 shrink-0 border-t border-stone-200 bg-white"
       >
         <div className="mx-auto flex max-w-md items-stretch justify-around">
           {navItems.map(({ to, label, Icon, end }) => (
