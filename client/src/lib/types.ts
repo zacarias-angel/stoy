@@ -30,6 +30,7 @@ export interface UpdateProfileInput {
   bio?: string | null;
   isVisible?: boolean;
   primarySkillId?: number | null;
+  skillIds?: number[];
 }
 
 export interface PublicProfile {
@@ -39,6 +40,7 @@ export interface PublicProfile {
   headline: string | null;
   bio: string | null;
   primarySkill: { id: number; name: string; slug: string } | null;
+  skills: Skill[];
 }
 
 export interface NearbyPerson {
@@ -57,4 +59,17 @@ export interface NearbyPerson {
 export interface NearbyResponse {
   radiusMeters: number;
   results: NearbyPerson[];
+}
+
+export interface Conversation {
+  id: number;
+  otherUser: { userId: number; name: string; avatarUrl: string | null; headline: string | null };
+  lastMessage: { text: string; createdAt: string } | null;
+}
+
+export interface Message {
+  id: number;
+  senderUserId: number;
+  text: string;
+  createdAt: string;
 }

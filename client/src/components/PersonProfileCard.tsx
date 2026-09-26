@@ -27,6 +27,16 @@ export function PersonProfileCard({ profile, distanceLabel, onTalk }: PersonProf
 
       {profile.bio && <p className="text-sm text-stone-600">{profile.bio}</p>}
 
+      {profile.skills.length > 1 && (
+        <div className="flex flex-wrap gap-1.5">
+          {profile.skills.map((skill) => (
+            <span key={skill.id} className="rounded-full bg-brand-50 px-2.5 py-1 text-xs font-medium text-brand-800">
+              {skill.name}
+            </span>
+          ))}
+        </div>
+      )}
+
       <Button fullWidth onClick={onTalk}>
         Hablar
       </Button>

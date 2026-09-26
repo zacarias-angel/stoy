@@ -20,9 +20,9 @@ const envSchema = z.object({
   LOCATION_SECRET: z.string().optional(),
 
   // Radio de descubrimiento (en metros). Configurable, no hardcodeado.
-  NEARBY_RADIUS_FREE_METERS: z.coerce.number().int().positive().default(1500),
+  NEARBY_RADIUS_FREE_METERS: z.coerce.number().int().positive().default(1000),
   NEARBY_RADIUS_MEMBER_METERS: z.coerce.number().int().positive().default(8000),
-  NEARBY_MAX_RADIUS_METERS: z.coerce.number().int().positive().default(5000),
+  NEARBY_MAX_RADIUS_METERS: z.coerce.number().int().positive().default(1000),
   // Si hay pocos perfiles cerca, se amplia el radio para no dejar la zona inutilizable.
   NEARBY_MIN_RESULTS: z.coerce.number().int().nonnegative().default(3),
   NEARBY_PAGE_SIZE: z.coerce.number().int().positive().max(100).default(30),

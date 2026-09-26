@@ -1,10 +1,14 @@
+import { createServer } from 'node:http';
 import { createApp } from './app.js';
 import { env } from './config/env.js';
 import { pingDatabase } from './db/pool.js';
+import { initializeRealtime } from './realtime/socket.js';
 
 const app = createApp();
+const server = createServer(app);
+initializeRealtime(server);
 
-app.listen(env.PORT, () => {
+server.listen(env.PORT, () => {
   console.log(`API En 5 Estoy escuchando en http://localhost:${env.PORT} (${env.NODE_ENV})`);
 });
 

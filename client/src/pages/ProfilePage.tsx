@@ -34,6 +34,7 @@ function ProfileForm({ profile, onLogout, onSaved }: ProfileFormProps) {
     profile.skills.find((skill) => skill.isPrimary)?.id ?? profile.skills[0]?.id ?? null
   );
   const [skills, setSkills] = useState<Skill[]>([]);
+  const [skillIds, setSkillIds] = useState<number[]>(profile.skills.map((skill) => skill.id));
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [error, setError] = useState<string | null>(null);
 
@@ -67,6 +68,7 @@ function ProfileForm({ profile, onLogout, onSaved }: ProfileFormProps) {
       bio: bio.trim() ? bio.trim() : null,
       isVisible,
       primarySkillId,
+      skillIds: skillIds.length ? skillIds : undefined,
     };
 
     try {
@@ -121,9 +123,11 @@ function ProfileForm({ profile, onLogout, onSaved }: ProfileFormProps) {
             name="primarySkill"
             className="w-full rounded-xl border border-stone-300 bg-white px-3.5 py-3 text-sm text-stone-900 focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-100"
             value={primarySkillId ?? ''}
-            onChange={(event) =>
-              setPrimarySkillId(event.target.value ? Number(event.target.value) : null)
-            }
+            onChange={(event) => {
+              const nextId = event.target.value ? Number(event.target.value) : null;
+              setPrimarySkillId(nextId);
+              if (nextId) setSkillIds((current) => current.includes(nextId) ? current : current.length < 5 ? [...current, nextId] : [...current.slice(1), nextId]);
+            }}
           >
             <option value="">Sin categoria</option>
             {skills.map((skill) => (
@@ -133,6 +137,29 @@ function ProfileForm({ profile, onLogout, onSaved }: ProfileFormProps) {
             ))}
           </select>
         </div>
+
+        <fieldset className="space-y-2">
+          <legend className="text-sm font-medium text-stone-700">Otras habilidades (hasta 5)</legend>
+          <div className="flex flex-wrap gap-2">
+            {skills.map((skill) => {
+              const selected = skillIds.includes(skill.id);
+              return (
+                <label key={skill.id} className={`cursor-pointer rounded-full border px-3 py-1.5 text-sm ${selected ? 'border-brand-600 bg-brand-50 text-brand-800' : 'border-stone-200 bg-white text-stone-600'}`}>
+                  <input type="checkbox" className="sr-only" checked={selected} onChange={() => setSkillIds((current) => {
+                    if (current.includes(skill.id)) {
+                      const next = current.filter((id) => id !== skill.id);
+                      if (primarySkillId === skill.id) setPrimarySkillId(next[0] ?? null);
+                      return next;
+                    }
+                    return current.length < 5 ? [...current, skill.id] : current;
+                  })} />
+                  {skill.name}
+                </label>
+              );
+            })}
+          </div>
+          <p className="text-xs text-stone-500">Elegí las habilidades que querés mostrar. La categoría principal debe estar incluida.</p>
+        </fieldset>
 
         <TextArea
           label="Descripcion corta"

@@ -8,8 +8,14 @@ export const updateProfileSchema = z
     bio: z.string().trim().max(500).nullable().optional(),
     isVisible: z.boolean().optional(),
     primarySkillId: z.number().int().positive().nullable().optional(),
+    skillIds: z.array(z.number().int().positive()).min(1).max(5).optional(),
   })
-  .strict();
+  .strict()
+  .superRefine((value, context) => {
+    if (value.skillIds && value.primarySkillId && !value.skillIds.includes(value.primarySkillId)) {
+      context.addIssue({ code: z.ZodIssueCode.custom, path: ['primarySkillId'], message: 'La habilidad principal debe estar entre las habilidades elegidas' });
+    }
+  });
 
 export const userIdParamSchema = z.object({
   userId: z.coerce.number().int().positive(),

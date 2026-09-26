@@ -5,6 +5,7 @@ import helmet from 'helmet';
 import { env } from './config/env.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { authRouter } from './modules/auth/auth.routes.js';
+import { conversationsRouter, safetyRouter } from './modules/conversations/conversations.routes.js';
 import { discoveryRouter } from './modules/discovery/discovery.routes.js';
 import { locationsRouter } from './modules/locations/locations.routes.js';
 import { profilesRouter } from './modules/profiles/profiles.routes.js';
@@ -37,6 +38,8 @@ export function createApp(): express.Express {
   app.use('/api/skills', skillsRouter);
   app.use('/api/locations', locationsRouter);
   app.use('/api/nearby', discoveryRouter);
+  app.use('/api/conversations', conversationsRouter);
+  app.use('/api', safetyRouter);
 
   app.use((_req, res) => {
     res.status(404).json({ error: { code: 'not_found', message: 'Recurso no encontrado' } });

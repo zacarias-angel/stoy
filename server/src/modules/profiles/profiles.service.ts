@@ -28,6 +28,7 @@ export interface PublicProfileDto {
   headline: string | null;
   bio: string | null;
   primarySkill: { id: number; name: string; slug: string } | null;
+  skills: ProfileSkill[];
 }
 
 export interface UpdateProfileInput {
@@ -37,6 +38,7 @@ export interface UpdateProfileInput {
   bio?: string | null;
   isVisible?: boolean;
   primarySkillId?: number | null;
+  skillIds?: number[];
 }
 
 interface ProfileRow extends RowDataPacket {
@@ -128,6 +130,7 @@ export async function getPublicProfile(userId: number): Promise<PublicProfileDto
     primarySkill: primary
       ? { id: primary.id, name: primary.name, slug: primary.slug }
       : null,
+    skills,
   };
 }
 
@@ -157,6 +160,30 @@ async function setPrimarySkill(
      VALUES (?, ?, 1)
      ON DUPLICATE KEY UPDATE is_primary = 1`,
     [userId, skillId]
+  );
+}
+
+async function setSkills(
+  connection: PoolConnection,
+  userId: number,
+  skillIds: number[],
+  primarySkillId: number | null | undefined
+): Promise<void> {
+  const uniqueIds = [...new Set(skillIds)];
+  const [rows] = await connection.query<RowDataPacket[]>(
+    `SELECT id FROM skills WHERE id IN (${uniqueIds.map(() => '?').join(', ')})`, uniqueIds
+  );
+  if (rows.length !== uniqueIds.length) {
+    throw new AppError(400, 'Una de las habilidades indicadas no existe', 'invalid_skill');
+  }
+  const primaryId = primarySkillId === undefined ? uniqueIds[0] : primarySkillId;
+  if (primaryId !== null && !uniqueIds.includes(primaryId)) {
+    throw new AppError(400, 'La habilidad principal debe estar elegida', 'invalid_skill');
+  }
+  await connection.query('DELETE FROM user_skills WHERE user_id = ?', [userId]);
+  await connection.query(
+    `INSERT INTO user_skills (user_id, skill_id, is_primary) VALUES ${uniqueIds.map(() => '(?, ?, ?)').join(', ')}`,
+    uniqueIds.flatMap((skillId) => [userId, skillId, skillId === primaryId ? 1 : 0])
   );
 }
 
@@ -203,7 +230,9 @@ export async function updateOwnProfile(
       }
     }
 
-    if (input.primarySkillId !== undefined) {
+    if (input.skillIds !== undefined) {
+      await setSkills(connection, userId, input.skillIds, input.primarySkillId);
+    } else if (input.primarySkillId !== undefined) {
       await setPrimarySkill(connection, userId, input.primarySkillId);
     }
 

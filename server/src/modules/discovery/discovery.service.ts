@@ -27,6 +27,7 @@ export interface NearbyResultDto {
   radiusMeters: number;
   results: NearbyPersonDto[];
 }
+export interface NearbyFilters { limit: number; q?: string; skillId?: number; }
 
 interface NearbyRow extends RowDataPacket {
   user_id: number;
@@ -43,7 +44,7 @@ async function queryNearby(
   userId: number,
   origin: LatLng,
   radiusMeters: number,
-  limit: number
+  filters: NearbyFilters
 ): Promise<NearbyPersonDto[]> {
   const originWkt = toPointWkt(origin.lng, origin.lat);
   const envelope = boundingBoxPolygonWkt(boundingBox(origin.lat, origin.lng, radiusMeters));
@@ -67,10 +68,15 @@ async function queryNearby(
        AND u.status = 'active'
        AND pr.is_visible = 1
        AND MBRContains(ST_GeomFromText(?), ul.public_location)
-       AND ST_Distance_Sphere(ul.public_location, ST_GeomFromText(?)) <= ?
-     ORDER BY distance_m ASC
-     LIMIT ?`,
-    [originWkt, userId, envelope, originWkt, radiusMeters, limit]
+        AND ST_Distance_Sphere(ul.public_location, ST_GeomFromText(?)) <= ?
+        AND (? IS NULL OR pr.name LIKE ? OR pr.headline LIKE ? OR pr.bio LIKE ? OR EXISTS (
+          SELECT 1 FROM user_skills search_us JOIN skills search_s ON search_s.id = search_us.skill_id
+          WHERE search_us.user_id = ul.user_id AND search_s.name LIKE ?
+        ))
+        AND (? IS NULL OR EXISTS (SELECT 1 FROM user_skills filter_us WHERE filter_us.user_id = ul.user_id AND filter_us.skill_id = ?))
+      ORDER BY distance_m ASC
+      LIMIT ?`,
+    [originWkt, userId, envelope, originWkt, radiusMeters, filters.q ?? null, `%${filters.q ?? ''}%`, `%${filters.q ?? ''}%`, `%${filters.q ?? ''}%`, `%${filters.q ?? ''}%`, filters.skillId ?? null, filters.skillId ?? null, filters.limit]
   );
 
   return rows.map((row) => {
@@ -92,16 +98,16 @@ async function queryNearby(
   });
 }
 
-export async function findNearby(userId: number, limit: number): Promise<NearbyResultDto> {
+export async function findNearby(userId: number, filters: NearbyFilters): Promise<NearbyResultDto> {
   const origin = requireOwnLocation(await getOwnLocation(userId));
 
   const maxRadius = env.NEARBY_MAX_RADIUS_METERS;
   let radius = Math.min(env.NEARBY_RADIUS_FREE_METERS, maxRadius);
-  let results = await queryNearby(userId, origin, radius, limit);
+  let results = await queryNearby(userId, origin, radius, filters);
 
   while (results.length < env.NEARBY_MIN_RESULTS && radius < maxRadius) {
     radius = Math.min(radius * 2, maxRadius);
-    results = await queryNearby(userId, origin, radius, limit);
+    results = await queryNearby(userId, origin, radius, filters);
   }
 
   return { radiusMeters: radius, results };
