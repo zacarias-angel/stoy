@@ -77,6 +77,7 @@ export function LoginPage() {
             Crear cuenta
           </Link>
         </p>
+        <Link to="/terminos" className="block text-center text-xs text-stone-500 underline underline-offset-4">Términos, condiciones y modo de uso</Link>
       </div>
     </div>
   );

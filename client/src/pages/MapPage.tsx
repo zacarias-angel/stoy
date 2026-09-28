@@ -90,8 +90,6 @@ export function MapPage() {
   const [query, setQuery] = useState('');
   const [skillId, setSkillId] = useState<number | null>(null);
   const [nearbyOpen, setNearbyOpen] = useState(false);
-  const [locationMenuOpen, setLocationMenuOpen] = useState(false);
-  const [selectingManualLocation, setSelectingManualLocation] = useState(false);
   const [visibilitySaving, setVisibilitySaving] = useState(false);
   const [membership, setMembership] = useState<Membership | null>(null);
 
@@ -248,28 +246,6 @@ export function MapPage() {
       active = false;
     };
   }, [loadNearby, locate, mapReady]);
-
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map || !mapReady || !selectingManualLocation) return;
-    const canvas = map.getCanvas();
-    canvas.style.cursor = 'crosshair';
-    const onMapClick = (event: { lngLat: { lat: number; lng: number } }) => {
-      setSelectingManualLocation(false);
-      setStatus('locating');
-      void saveLocation({ lat: event.lngLat.lat, lng: event.lngLat.lng });
-    };
-    map.once('click', onMapClick);
-    return () => {
-      canvas.style.cursor = '';
-      map.off('click', onMapClick);
-    };
-  }, [mapReady, saveLocation, selectingManualLocation]);
-
-  function startManualLocationSelection() {
-    setLocationMenuOpen(false);
-    setSelectingManualLocation(true);
-  }
 
   async function toggleMapVisibility() {
     if (!profile || visibilitySaving) return;
@@ -431,7 +407,7 @@ export function MapPage() {
          <Button type="submit" className="shrink-0">Buscar</Button>
        </form>
 
-       <MapControls onLocate={locate} onOpenLocationMenu={() => setLocationMenuOpen(true)} locating={status === 'locating'} />
+       <MapControls onLocate={locate} locating={status === 'locating'} />
 
        {membership && !membership.isActive && (
          <button
@@ -443,18 +419,6 @@ export function MapPage() {
            <span className="mt-1 block text-sm text-stone-600">ampliá tu mapa de 500 m <span className="font-hand text-base text-stone-800">-&gt;</span></span>
          </button>
        )}
-
-       {locationMenuOpen && <div className="paper-panel absolute bottom-4 left-16 z-30 w-72 rounded-[1.25rem_1rem_1.35rem_1.1rem] p-4">
-         <button type="button" onClick={() => setLocationMenuOpen(false)} aria-label="Cerrar" className="absolute right-2 top-2 p-2 text-stone-500"><CloseIcon width={17} height={17} /></button>
-         <p className="hand-note text-lg text-brand-800">tu ubicación</p>
-         <p className="mt-1 pr-6 text-sm text-stone-600">Podés usar el GPS o marcar el punto exacto en el mapa.</p>
-         <div className="mt-4 grid gap-2">
-           <Button onClick={() => { setLocationMenuOpen(false); locate(true); }}>Usar mi GPS</Button>
-           <Button variant="secondary" onClick={startManualLocationSelection}>Elegir en el mapa</Button>
-         </div>
-       </div>}
-
-       {selectingManualLocation && <div className="absolute inset-x-0 top-16 z-30 mx-auto w-fit max-w-[calc(100%-2rem)] rounded-full border border-stone-700 bg-[#fffaf0] px-4 py-2 text-sm font-medium text-stone-800 shadow-md">Tocá el lugar donde estás para ajustar tu ubicación <button type="button" onClick={() => setSelectingManualLocation(false)} className="ml-2 font-semibold text-brand-800 underline">Cancelar</button></div>}
 
       {(status === 'denied' || status === 'unsupported' || status === 'error') && (
         <div className="absolute inset-x-0 top-16 z-20 mx-auto max-w-xs px-3">

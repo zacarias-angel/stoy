@@ -104,6 +104,7 @@ export function RegisterPage() {
             Ingresar
           </Link>
         </p>
+        <p className="text-center text-xs leading-5 text-stone-500">Al crear una cuenta aceptás los <Link to="/terminos" className="underline underline-offset-4">términos, condiciones y modo de uso</Link>.</p>
       </div>
     </div>
   );

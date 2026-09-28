@@ -10,6 +10,7 @@ import { LoginPage } from './pages/LoginPage';
 import { MembershipPage } from './pages/MembershipPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { RegisterPage } from './pages/RegisterPage';
+import { TermsPage } from './pages/TermsPage';
 
 const MapPage = lazy(() =>
   import('./pages/MapPage').then((module) => ({ default: module.MapPage }))
@@ -24,6 +25,7 @@ export function App() {
             <Route path="/bienvenida" element={<IntroPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/terminos" element={<TermsPage />} />
             <Route
               element={
                 <RequireAuth>

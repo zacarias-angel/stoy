@@ -23,6 +23,7 @@ export function IntroPage() {
             ya tengo cuenta
           </Link>
         </div>
+        <Link to="/terminos" className="mt-7 block text-xs text-stone-600 underline underline-offset-4">Términos, condiciones y modo de uso</Link>
       </div>
     </main>
   );
