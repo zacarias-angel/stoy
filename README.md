@@ -11,6 +11,12 @@ Fases implementadas:
   entorno, autenticacion y modelo de usuario/perfil.
 - **Fase 2 - Mapa**: MapLibre + OpenStreetMap, geolocalizacion, guardado privado/ofuscado de
   ubicacion, consulta de perfiles cercanos y bottom sheet de persona.
+- **Fase 3 - Descubrimiento**: habilidades, busqueda y perfiles publicos con privacidad y
+  visibilidad.
+- **Fase 4 - Chat**: conversaciones privadas, mensajes de texto en tiempo real, persistencia,
+  bloqueos y reportes.
+- **Fase 5 - Membresia (base)**: esquema de membresias y eventos idempotentes del proveedor,
+  estado efectivo en backend y radio de descubrimiento ampliado para miembros activos.
 
 ## Estructura
 
@@ -88,6 +94,7 @@ en5estoy/
 | `GET` | `/api/locations/me` | Ubicacion propia (requiere token) |
 | `PUT` | `/api/locations/me` | Guarda ubicacion propia (calcula la publica ofuscada) |
 | `GET` | `/api/nearby?limit=30` | Perfiles cercanos visibles con distancia humana |
+| `GET` | `/api/memberships/me` | Estado efectivo y beneficios de la membresia propia |
 
 ## Privacidad de ubicacion
 

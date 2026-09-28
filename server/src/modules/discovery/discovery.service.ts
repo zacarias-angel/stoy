@@ -9,6 +9,7 @@ import {
   type LatLng,
 } from '../../utils/geo.js';
 import { getOwnLocation, requireOwnLocation } from '../locations/locations.service.js';
+import { getMembership } from '../memberships/memberships.service.js';
 
 export interface NearbyPersonDto {
   userId: number;
@@ -100,9 +101,11 @@ async function queryNearby(
 
 export async function findNearby(userId: number, filters: NearbyFilters): Promise<NearbyResultDto> {
   const origin = requireOwnLocation(await getOwnLocation(userId));
+  const membership = await getMembership(userId);
 
-  const maxRadius = env.NEARBY_MAX_RADIUS_METERS;
-  let radius = Math.min(env.NEARBY_RADIUS_FREE_METERS, maxRadius);
+  // El ajuste por densidad nunca puede superar el alcance del plan del usuario.
+  const maxRadius = Math.min(env.NEARBY_MAX_RADIUS_METERS, membership.discoveryRadiusMeters);
+  let radius = Math.min(membership.discoveryRadiusMeters, maxRadius);
   let results = await queryNearby(userId, origin, radius, filters);
 
   while (results.length < env.NEARBY_MIN_RESULTS && radius < maxRadius) {

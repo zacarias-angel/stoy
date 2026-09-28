@@ -11,7 +11,7 @@ export function RequireAuth({ children }: { children: ReactNode }) {
   }
 
   if (!profile) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/bienvenida" replace />;
   }
 
   return <>{children}</>;

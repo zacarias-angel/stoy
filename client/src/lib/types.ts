@@ -73,3 +73,11 @@ export interface Message {
   text: string;
   createdAt: string;
 }
+
+export interface Membership {
+  isActive: boolean;
+  status: 'inactive' | 'active' | 'past_due' | 'cancelled' | 'expired';
+  expiresAt: string | null;
+  priceArs: number;
+  discoveryRadiusMeters: number;
+}

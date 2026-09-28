@@ -16,7 +16,7 @@ export function createPersonMarkerElement(
   const element = document.createElement('button');
   element.type = 'button';
   element.className =
-    'flex h-11 w-11 cursor-pointer items-center justify-center overflow-hidden rounded-[45%_55%_52%_48%] border-2 border-stone-800 bg-[#fffaf0] text-sm font-semibold text-brand-800 shadow-[2px_3px_0_rgba(41,37,36,0.45)] transition-transform hover:scale-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500';
+    'flex h-16 w-16 cursor-pointer items-center justify-center overflow-hidden rounded-[45%_55%_52%_48%] border-[3px] border-stone-800 bg-[#fffaf0] text-lg font-semibold text-brand-800 shadow-[3px_4px_0_rgba(41,37,36,0.45)] transition-transform hover:scale-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500';
   element.setAttribute(
     'aria-label',
     `${person.name}, ${person.skill ?? person.headline ?? 'perfil'}, ${person.distanceLabel}`

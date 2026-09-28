@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&family=Patrick+Hand&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -13,17 +15,61 @@ body,
 }
 
 body {
-  @apply bg-[#e8e0d1] font-sans text-stone-900 antialiased;
-  background-image: radial-gradient(rgba(68, 52, 37, 0.08) 0.6px, transparent 0.7px);
+  @apply bg-[#d9d4c9] text-stone-900 antialiased;
+  font-family: 'Patrick Hand', 'Comic Sans MS', cursive;
+  background-image: radial-gradient(rgba(91, 82, 66, 0.07) 0 0.7px, transparent 1px);
   background-size: 5px 5px;
 }
 
-.paper-panel {
-  background-color: rgba(255, 252, 245, 0.96);
-  background-image: linear-gradient(125deg, rgba(120, 95, 65, 0.035), transparent 38%, rgba(120, 95, 65, 0.025));
-  border: 1px solid rgba(68, 52, 37, 0.18);
-  box-shadow: 2px 3px 0 rgba(68, 52, 37, 0.13);
+.font-hand,
+.hand-note {
+  font-family: 'Caveat', 'Comic Sans MS', cursive;
 }
+
+.paper-panel {
+  background-color: #f8f4e9;
+  background-image: linear-gradient(90deg, transparent 0, transparent 39px, rgba(205, 91, 83, .13) 40px, transparent 41px), repeating-linear-gradient(0deg, transparent 0, transparent 32px, rgba(115, 142, 154, .09) 33px, transparent 34px), radial-gradient(circle at 4% 30%, rgba(91, 82, 66, .07) 0 1px, transparent 2px);
+  border: 1px solid rgba(57, 54, 47, 0.28);
+  box-shadow: 3px 5px 12px rgba(57, 54, 47, 0.16);
+}
+
+.paper-page {
+  background-color: #f8f4e9;
+  background-image: linear-gradient(90deg, transparent 0, transparent 39px, rgba(205, 91, 83, .13) 40px, transparent 41px), repeating-linear-gradient(0deg, transparent 0, transparent 32px, rgba(115, 142, 154, .09) 33px, transparent 34px), radial-gradient(circle at 4% 30%, rgba(91, 82, 66, .07) 0 1px, transparent 2px);
+}
+
+.input-line {
+  border-bottom: 2px solid #58534b;
+  border-radius: 49% 2% 53% 4%;
+  transform: rotate(-.35deg);
+}
+
+.hand-action {
+  border-radius: 48% 5% 52% 7%;
+}
+
+.answer-number::before,
+.answer-number::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 2px solid #4b4740;
+  border-radius: 48% 46% 51% 44%;
+  pointer-events: none;
+}
+
+.answer-number::after {
+  inset: 3px -3px -2px 2px;
+  border-width: 1px;
+  transform: rotate(3deg);
+}
+
+@keyframes pencil-in {
+  from { opacity: 0; transform: translateY(6px); filter: blur(1px); }
+  to { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+
+.animate-pencil-in { animation: pencil-in 550ms ease-out both; }
 
 .map-canvas .maplibregl-canvas {
   filter: grayscale(0.8) sepia(0.24) contrast(0.86) brightness(1.08);
@@ -37,10 +83,6 @@ body {
   opacity: 0.18;
   background-image: repeating-linear-gradient(7deg, transparent 0 5px, rgba(72, 59, 44, 0.12) 6px 7px);
   mix-blend-mode: multiply;
-}
-
-.hand-note {
-  font-family: 'Patrick Hand', cursive;
 }
 
 @media (prefers-reduced-motion: reduce) {

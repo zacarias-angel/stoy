@@ -19,15 +19,15 @@ export function TextField({
 
   return (
     <div className="space-y-1.5">
-      <label htmlFor={inputId} className="block text-sm font-medium text-stone-700">
+      <label htmlFor={inputId} className="font-hand block text-lg text-stone-700">
         {label}
       </label>
       <input
         id={inputId}
         name={name}
         className={[
-          'w-full rounded-xl border bg-white px-3.5 py-3 text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-brand-100',
-          error ? 'border-red-400 focus:border-red-500' : 'border-stone-300 focus:border-brand-600',
+           'input-line w-full bg-transparent px-2 py-2 text-base text-stone-900 placeholder:text-stone-400 focus:outline-none',
+           error ? 'border-red-500 focus:border-red-600' : 'border-stone-600 focus:border-stone-800',
           className,
         ]
           .filter(Boolean)

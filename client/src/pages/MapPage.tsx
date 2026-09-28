@@ -9,13 +9,13 @@ import { useNavigate } from 'react-router-dom';
 import { BottomSheet } from '../components/BottomSheet';
 import { Button } from '../components/Button';
 import { MapControls } from '../components/MapControls';
-import { CloseIcon, PeopleIcon } from '../components/icons';
+import { CloseIcon, EyeIcon, EyeOffIcon, PeopleIcon } from '../components/icons';
 import { PersonCard } from '../components/PersonCard';
 import { PersonProfileCard } from '../components/PersonProfileCard';
-import { createPersonMarkerElement } from '../components/PersonMarker';
 import { apiFetch } from '../lib/api';
+import { useAuth } from '../lib/auth';
 import { buildRadiusCircle, DEFAULT_CENTER, DEFAULT_ZOOM, mapStyle } from '../lib/map';
-import type { NearbyPerson, NearbyResponse, PublicProfile, Skill } from '../lib/types';
+import type { Membership, NearbyPerson, NearbyResponse, PublicProfile, Skill } from '../lib/types';
 
 type LocationStatus = 'idle' | 'locating' | 'ready' | 'denied' | 'unsupported' | 'error';
 
@@ -25,14 +25,59 @@ const statusMessages: Record<Exclude<LocationStatus, 'idle' | 'locating' | 'read
   error: 'No pudimos guardar tu ubicacion. Intenta de nuevo.',
 };
 
+function createFallbackAvatar(name: string): ImageData {
+  const size = 160;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const context = canvas.getContext('2d');
+  if (!context) return new ImageData(size, size);
+
+  context.beginPath();
+  context.arc(size / 2, size / 2, 74, 0, Math.PI * 2);
+  context.fillStyle = '#f8f4e9';
+  context.fill();
+  context.strokeStyle = '#39362f';
+  context.lineWidth = 7;
+  context.stroke();
+  context.fillStyle = '#39362f';
+  context.font = 'bold 78px sans-serif';
+  context.textAlign = 'center';
+  context.textBaseline = 'middle';
+  context.fillText(name.trim().charAt(0).toUpperCase() || '?', size / 2, size / 2 + 4);
+  return context.getImageData(0, 0, size, size);
+}
+
+function createRoundAvatar(source: CanvasImageSource): ImageData {
+  const size = 160;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const context = canvas.getContext('2d');
+  if (!context) return new ImageData(size, size);
+
+  context.save();
+  context.beginPath();
+  context.arc(size / 2, size / 2, 72, 0, Math.PI * 2);
+  context.clip();
+  context.drawImage(source, 0, 0, size, size);
+  context.restore();
+  context.beginPath();
+  context.arc(size / 2, size / 2, 74, 0, Math.PI * 2);
+  context.strokeStyle = '#39362f';
+  context.lineWidth = 7;
+  context.stroke();
+  return context.getImageData(0, 0, size, size);
+}
+
 export function MapPage() {
   const navigate = useNavigate();
+  const { profile, refreshProfile } = useAuth();
 
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
-  const markersRef = useRef<Marker[]>([]);
   const userMarkerRef = useRef<Marker | null>(null);
-  const locationInitializedRef = useRef(false);
+  const nearbyRef = useRef<NearbyPerson[]>([]);
 
   const [mapReady, setMapReady] = useState(false);
   const [status, setStatus] = useState<LocationStatus>('idle');
@@ -47,6 +92,8 @@ export function MapPage() {
   const [nearbyOpen, setNearbyOpen] = useState(false);
   const [locationMenuOpen, setLocationMenuOpen] = useState(false);
   const [selectingManualLocation, setSelectingManualLocation] = useState(false);
+  const [visibilitySaving, setVisibilitySaving] = useState(false);
+  const [membership, setMembership] = useState<Membership | null>(null);
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) {
@@ -62,7 +109,11 @@ export function MapPage() {
     });
 
     map.addControl(new NavigationControl({ showCompass: false }), 'top-right');
-    map.on('click', () => setSelected(null));
+    map.on('click', (event) => {
+      const hitPerson = map.getLayer('people-photo')
+        && map.queryRenderedFeatures(event.point, { layers: ['people-photo'] }).length > 0;
+      if (!hitPerson) setSelected(null);
+    });
 
     map.on('load', () => {
       map.addSource('radius', {
@@ -81,14 +132,32 @@ export function MapPage() {
         source: 'radius',
         paint: { 'line-color': '#0d9488', 'line-opacity': 0.4, 'line-width': 1 },
       });
+      map.addSource('people', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+      map.addLayer({
+        id: 'people-photo',
+        type: 'symbol',
+        source: 'people',
+        layout: {
+          'icon-image': ['get', 'icon'],
+          'icon-size': 0.4,
+          'icon-allow-overlap': true,
+          'icon-ignore-placement': true,
+        },
+      });
+      map.on('click', 'people-photo', (event) => {
+        const userId = Number(event.features?.[0]?.properties?.userId);
+        const person = nearbyRef.current.find((item) => item.userId === userId);
+        if (person) {
+          setSelected(person);
+          setDetail(null);
+        }
+      });
       setMapReady(true);
     });
 
     mapRef.current = map;
 
     return () => {
-      markersRef.current.forEach((marker) => marker.remove());
-      markersRef.current = [];
       userMarkerRef.current?.remove();
       userMarkerRef.current = null;
       map.remove();
@@ -107,6 +176,10 @@ export function MapPage() {
 
   useEffect(() => {
     apiFetch<{ skills: Skill[] }>('/api/skills').then((data) => setSkills(data.skills)).catch(() => setSkills([]));
+  }, []);
+
+  useEffect(() => {
+    apiFetch<Membership>('/api/memberships/me').then(setMembership).catch(() => setMembership(null));
   }, []);
 
   function applyFilters(event: ChangeEvent<HTMLFormElement>) {
@@ -147,8 +220,7 @@ export function MapPage() {
   }, [saveLocation]);
 
   useEffect(() => {
-    if (locationInitializedRef.current) return;
-    locationInitializedRef.current = true;
+    if (!mapReady) return;
     let active = true;
 
     apiFetch<{ location: { lat: number; lng: number } | null }>('/api/locations/me')
@@ -175,7 +247,7 @@ export function MapPage() {
     return () => {
       active = false;
     };
-  }, [loadNearby, locate]);
+  }, [loadNearby, locate, mapReady]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -199,6 +271,23 @@ export function MapPage() {
     setSelectingManualLocation(true);
   }
 
+  async function toggleMapVisibility() {
+    if (!profile || visibilitySaving) return;
+    setVisibilitySaving(true);
+    try {
+      await apiFetch('/api/profiles/me', {
+        method: 'PUT',
+        body: JSON.stringify({ isVisible: !profile.isVisible }),
+      });
+      await refreshProfile();
+      if (profile.isVisible) setNearby((current) => current ? { ...current, results: current.results.filter((person) => person.userId !== profile.userId) } : current);
+    } catch {
+      // El estado visual se conserva hasta que el backend confirme el cambio.
+    } finally {
+      setVisibilitySaving(false);
+    }
+  }
+
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !mapReady || !coords || !nearby) {
@@ -210,42 +299,73 @@ export function MapPage() {
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !mapReady || !coords) {
+    if (!map || !mapReady || !coords || !profile?.isVisible) {
+      userMarkerRef.current?.remove();
+      userMarkerRef.current = null;
       return;
     }
     if (!userMarkerRef.current) {
       const element = document.createElement('div');
-      element.className = 'h-4 w-4 rounded-full border-2 border-white bg-brand-700 shadow';
+      element.className = 'flex h-16 w-16 items-center justify-center overflow-hidden rounded-[45%_55%_52%_48%] border-[3px] border-stone-800 bg-[#fffaf0] text-lg font-semibold text-brand-800 shadow-[3px_4px_0_rgba(41,37,36,0.45)]';
+      if (profile.avatarUrl) {
+        const image = document.createElement('img');
+        image.src = profile.avatarUrl;
+        image.alt = '';
+        image.className = 'h-full w-full object-cover';
+        element.appendChild(image);
+      } else {
+        element.textContent = profile.name.trim().charAt(0).toUpperCase() || '?';
+      }
       userMarkerRef.current = new Marker({ element, anchor: 'center' })
         .setLngLat([coords.lng, coords.lat])
         .addTo(map);
     } else {
       userMarkerRef.current.setLngLat([coords.lng, coords.lat]);
     }
-  }, [coords, mapReady]);
+  }, [coords, mapReady, profile]);
+
+  useEffect(() => {
+    nearbyRef.current = nearby?.results ?? [];
+  }, [nearby]);
 
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !mapReady) {
       return;
     }
+    const source = map.getSource('people') as GeoJSONSource | undefined;
+    if (!source) return;
+    const activeMap = map;
+    const activeSource = source;
 
-    markersRef.current.forEach((marker) => marker.remove());
-    markersRef.current = [];
-
-    if (!nearby) {
-      return;
-    }
-
-    markersRef.current = nearby.results.map((person) => {
-      const element = createPersonMarkerElement(person, (selectedPerson) => {
-        setSelected(selectedPerson);
-        setDetail(null);
+    let cancelled = false;
+    async function updatePeopleLayer() {
+      const people = nearby?.results ?? [];
+      people.forEach((person) => {
+        const imageId = `person-photo-${person.userId}`;
+        if (!activeMap.hasImage(imageId)) activeMap.addImage(imageId, createFallbackAvatar(person.name));
       });
-      return new Marker({ element, anchor: 'center' })
-        .setLngLat([person.lng, person.lat])
-        .addTo(map);
-    });
+      activeSource.setData({
+        type: 'FeatureCollection',
+        features: people.map((person) => ({
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: [person.lng, person.lat] },
+          properties: { userId: person.userId, icon: `person-photo-${person.userId}` },
+        })),
+      });
+      await Promise.all(people.filter((person) => person.avatarUrl).map(async (person) => {
+        try {
+          const image = await activeMap.loadImage(person.avatarUrl!);
+          if (!cancelled && activeMap.hasImage(`person-photo-${person.userId}`)) {
+            activeMap.updateImage(`person-photo-${person.userId}`, createRoundAvatar(image.data));
+          }
+        } catch {
+          // The generated initial remains visible if the remote image blocks CORS.
+        }
+      }));
+    }
+    void updatePeopleLayer();
+    return () => { cancelled = true; };
   }, [nearby, mapReady]);
 
   const openProfile = useCallback(async (userId: number) => {
@@ -272,9 +392,13 @@ export function MapPage() {
     <section className="absolute inset-0 overflow-hidden md:p-5">
       <div ref={containerRef} className="map-canvas absolute inset-0 md:inset-5 md:rounded-[1.5rem_1.25rem_1.8rem_1.35rem] md:border md:border-stone-400 md:shadow-[3px_4px_0_rgba(68,52,37,0.2)]" />
 
-      <button type="button" onClick={() => setNearbyOpen(true)} aria-label="Ver personas cerca" className="absolute right-4 top-4 z-20 flex h-11 w-11 items-center justify-center rounded-[45%_55%_52%_48%] border border-stone-700 bg-[#fffaf0] text-brand-800 shadow-[2px_3px_0_rgba(41,37,36,0.35)] transition-transform hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 md:right-9 md:top-9">
-        <PeopleIcon width={21} height={21} />
-      </button>
+       <button type="button" onClick={() => setNearbyOpen(true)} aria-label="Ver personas cerca" className="absolute right-4 top-4 z-20 flex h-11 w-11 items-center justify-center rounded-[45%_55%_52%_48%] border border-stone-700 bg-[#fffaf0] text-brand-800 shadow-[2px_3px_0_rgba(41,37,36,0.35)] transition-transform hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 md:right-9 md:top-9">
+         <PeopleIcon width={21} height={21} />
+       </button>
+
+       {profile && <button type="button" onClick={toggleMapVisibility} disabled={visibilitySaving} aria-label={profile.isVisible ? 'Dejar de mostrarme en el mapa' : 'Mostrarme en el mapa'} title={profile.isVisible ? 'Te mostrás en el mapa' : 'No te mostrás en el mapa'} className={`absolute right-16 top-4 z-20 flex h-11 w-11 items-center justify-center rounded-[45%_55%_52%_48%] border shadow-[2px_3px_0_rgba(41,37,36,0.35)] transition-transform hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 disabled:opacity-60 md:right-[5.25rem] md:top-9 ${profile.isVisible ? 'border-stone-700 bg-[#fffaf0] text-stone-800' : 'border-stone-400 bg-[#e7e1d5] text-stone-500'}`}>
+         {profile.isVisible ? <EyeIcon width={21} height={21} /> : <EyeOffIcon width={21} height={21} />}
+       </button>}
 
       {nearbyOpen && <aside className="paper-panel absolute bottom-16 right-3 top-16 z-30 flex w-[min(20rem,calc(100%-1.5rem))] flex-col rounded-[1.4rem_1.15rem_1.5rem_1.2rem] p-5 md:bottom-auto md:right-9 md:top-20 md:h-[min(36rem,calc(100%-7rem))]">
         <button type="button" onClick={() => setNearbyOpen(false)} aria-label="Cerrar personas cercanas" className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full text-stone-500 hover:bg-stone-100"><CloseIcon width={18} height={18} /></button>
@@ -308,6 +432,17 @@ export function MapPage() {
        </form>
 
        <MapControls onLocate={locate} onOpenLocationMenu={() => setLocationMenuOpen(true)} locating={status === 'locating'} />
+
+       {membership && !membership.isActive && (
+         <button
+           type="button"
+           onClick={() => navigate('/membresia')}
+           className="hand-action absolute bottom-4 right-3 z-20 max-w-[15rem] border-2 border-stone-700 bg-[#f8f4e9]/95 px-4 py-3 text-left shadow-[3px_4px_0_rgba(57,54,47,0.25)] transition-transform hover:-rotate-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-stone-600 md:bottom-9 md:right-9"
+         >
+           <span className="font-hand block text-lg font-semibold leading-none text-stone-800">¿querés ver más lejos?</span>
+           <span className="mt-1 block text-sm text-stone-600">ampliá tu mapa de 500 m <span className="font-hand text-base text-stone-800">-&gt;</span></span>
+         </button>
+       )}
 
        {locationMenuOpen && <div className="paper-panel absolute bottom-4 left-16 z-30 w-72 rounded-[1.25rem_1rem_1.35rem_1.1rem] p-4">
          <button type="button" onClick={() => setLocationMenuOpen(false)} aria-label="Cerrar" className="absolute right-2 top-2 p-2 text-stone-500"><CloseIcon width={17} height={17} /></button>

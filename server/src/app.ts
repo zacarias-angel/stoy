@@ -8,6 +8,7 @@ import { authRouter } from './modules/auth/auth.routes.js';
 import { conversationsRouter, safetyRouter } from './modules/conversations/conversations.routes.js';
 import { discoveryRouter } from './modules/discovery/discovery.routes.js';
 import { locationsRouter } from './modules/locations/locations.routes.js';
+import { membershipsRouter } from './modules/memberships/memberships.routes.js';
 import { profilesRouter } from './modules/profiles/profiles.routes.js';
 import { skillsRouter } from './modules/skills/skills.routes.js';
 
@@ -38,6 +39,7 @@ export function createApp(): express.Express {
   app.use('/api/skills', skillsRouter);
   app.use('/api/locations', locationsRouter);
   app.use('/api/nearby', discoveryRouter);
+  app.use('/api/memberships', membershipsRouter);
   app.use('/api/conversations', conversationsRouter);
   app.use('/api', safetyRouter);
 

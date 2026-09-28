@@ -6,12 +6,12 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const base =
-  'inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50';
+  'hand-action inline-flex items-center justify-center gap-2 border-2 border-stone-700 bg-transparent px-4 py-2.5 text-base font-semibold text-stone-800 transition-transform hover:-rotate-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50';
 
 const variants: Record<NonNullable<ButtonProps['variant']>, string> = {
-  primary: 'bg-brand-700 text-white hover:bg-brand-800',
-  secondary: 'bg-brand-50 text-brand-800 hover:bg-brand-100',
-  ghost: 'text-stone-600 hover:bg-stone-100',
+  primary: 'border-stone-700 text-stone-800 hover:bg-stone-800/5',
+  secondary: 'border-stone-500 text-stone-700 hover:bg-stone-800/5',
+  ghost: 'border-transparent text-stone-600 hover:border-stone-400 hover:bg-transparent',
 };
 
 export function Button({

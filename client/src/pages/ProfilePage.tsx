@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { Link } from 'react-router-dom';
 import { Avatar } from '../components/Avatar';
 import { Button } from '../components/Button';
 import { TextArea } from '../components/TextArea';
@@ -29,7 +30,6 @@ function ProfileForm({ profile, onLogout, onSaved }: ProfileFormProps) {
   const [name, setName] = useState(profile.name);
   const [headline, setHeadline] = useState(profile.headline ?? '');
   const [bio, setBio] = useState(profile.bio ?? '');
-  const [isVisible, setIsVisible] = useState(profile.isVisible);
   const [primarySkillId, setPrimarySkillId] = useState<number | null>(
     profile.skills.find((skill) => skill.isPrimary)?.id ?? profile.skills[0]?.id ?? null
   );
@@ -66,7 +66,6 @@ function ProfileForm({ profile, onLogout, onSaved }: ProfileFormProps) {
       name: name.trim(),
       headline: headline.trim() ? headline.trim() : null,
       bio: bio.trim() ? bio.trim() : null,
-      isVisible,
       primarySkillId,
       skillIds: skillIds.length ? skillIds : undefined,
     };
@@ -171,16 +170,6 @@ function ProfileForm({ profile, onLogout, onSaved }: ProfileFormProps) {
           onChange={(event) => setBio(event.target.value)}
         />
 
-        <label className="flex items-center justify-between rounded-xl border border-stone-200 bg-white px-3.5 py-3">
-          <span className="text-sm text-stone-700">Mostrarme en el mapa</span>
-          <input
-            type="checkbox"
-            className="h-5 w-5 rounded border-stone-300 text-brand-700 focus:ring-brand-500"
-            checked={isVisible}
-            onChange={(event) => setIsVisible(event.target.checked)}
-          />
-        </label>
-
         {error && (
           <p role="alert" className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">
             {error}
@@ -193,6 +182,10 @@ function ProfileForm({ profile, onLogout, onSaved }: ProfileFormProps) {
           </Button>
           {status === 'saved' && <span className="text-sm text-brand-700">Guardado</span>}
         </div>
+
+        <Link to="/membresia" className="hand-action inline-block text-base text-stone-700">
+          ( ver mi membresía -&gt; )
+        </Link>
       </form>
 
       <div className="border-t border-stone-200 pt-5">

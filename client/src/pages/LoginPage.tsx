@@ -31,8 +31,8 @@ export function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-full flex-col justify-center bg-stone-50 px-6 py-10">
-      <div className="mx-auto w-full max-w-sm space-y-8">
+    <div className="flex min-h-full flex-col justify-center bg-[#f8f4e9] bg-cover bg-center px-6 py-10" style={{ backgroundImage: "url('/asset/backgroud.png')" }}>
+      <div className="paper-panel mx-auto w-full max-w-sm space-y-8 rounded-[1.4rem_1.15rem_1.5rem_1.2rem] p-6">
         <div className="space-y-2 text-center">
           <h1 className="text-2xl font-bold tracking-tight text-brand-800">En 5 Estoy</h1>
           <p className="text-sm text-stone-500">
