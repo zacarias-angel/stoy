@@ -103,8 +103,10 @@ export async function findNearby(userId: number, filters: NearbyFilters): Promis
   const origin = requireOwnLocation(await getOwnLocation(userId));
   const membership = await getMembership(userId);
 
-  // El ajuste por densidad nunca puede superar el alcance del plan del usuario.
-  const maxRadius = Math.min(env.NEARBY_MAX_RADIUS_METERS, membership.discoveryRadiusMeters);
+  // La membresia garantiza su radio contratado; el limite global solo regula el plan gratuito.
+  const maxRadius = membership.isActive
+    ? membership.discoveryRadiusMeters
+    : Math.min(env.NEARBY_MAX_RADIUS_METERS, membership.discoveryRadiusMeters);
   let radius = Math.min(membership.discoveryRadiusMeters, maxRadius);
   let results = await queryNearby(userId, origin, radius, filters);
 

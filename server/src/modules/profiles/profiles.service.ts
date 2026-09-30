@@ -29,6 +29,8 @@ export interface PublicProfileDto {
   bio: string | null;
   primarySkill: { id: number; name: string; slug: string } | null;
   skills: ProfileSkill[];
+  ratingAverage: number | null;
+  ratingCount: number;
 }
 
 export interface UpdateProfileInput {
@@ -56,6 +58,23 @@ interface SkillRow extends RowDataPacket {
   name: string;
   slug: string;
   is_primary: number;
+}
+
+interface RatingRow extends RowDataPacket {
+  average_rating: number | string | null;
+  rating_count: number;
+}
+
+async function getRatingSummary(userId: number): Promise<{ ratingAverage: number | null; ratingCount: number }> {
+  const [rows] = await pool.query<RatingRow[]>(
+    'SELECT AVG(rating) AS average_rating, COUNT(*) AS rating_count FROM profile_reviews WHERE reviewed_user_id = ?',
+    [userId]
+  );
+  const row = rows[0]!;
+  return {
+    ratingAverage: row.average_rating === null ? null : Number(row.average_rating),
+    ratingCount: Number(row.rating_count),
+  };
 }
 
 async function getUserSkills(userId: number): Promise<ProfileSkill[]> {
@@ -120,6 +139,7 @@ export async function getPublicProfile(userId: number): Promise<PublicProfileDto
 
   const skills = await getUserSkills(userId);
   const primary = skills.find((skill) => skill.isPrimary) ?? skills[0] ?? null;
+  const rating = await getRatingSummary(userId);
 
   return {
     userId: row.user_id,
@@ -131,6 +151,7 @@ export async function getPublicProfile(userId: number): Promise<PublicProfileDto
       ? { id: primary.id, name: primary.name, slug: primary.slug }
       : null,
     skills,
+    ...rating,
   };
 }
 

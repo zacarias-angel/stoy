@@ -21,4 +21,9 @@ export const userIdParamSchema = z.object({
   userId: z.coerce.number().int().positive(),
 });
 
+export const reviewSchema = z.object({
+  rating: z.number().int().min(1, 'La puntuacion minima es 1').max(5, 'La puntuacion maxima es 5'),
+  comment: z.string().trim().min(3, 'La resena es muy corta').max(500).nullable().optional(),
+}).strict();
+
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;

@@ -41,6 +41,21 @@ export interface PublicProfile {
   bio: string | null;
   primarySkill: { id: number; name: string; slug: string } | null;
   skills: Skill[];
+  ratingAverage: number | null;
+  ratingCount: number;
+}
+
+export interface ProfileReview {
+  id: number;
+  rating: number;
+  comment: string | null;
+  createdAt: string;
+  reviewer: { userId: number; name: string; avatarUrl: string | null };
+}
+
+export interface ProfileReviewsResponse {
+  reviews: ProfileReview[];
+  viewerReview: ProfileReview | null;
 }
 
 export interface NearbyPerson {
